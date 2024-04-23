@@ -1,91 +1,95 @@
-// HTML für das Popup-Fenster
-const popupHTML = `
-<div id="deffPopup" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #fff; padding: 20px; border: 1px solid #ccc; z-index: 9999;">
-    <textarea id="deffInput" rows="10" cols="50" placeholder="Standdeff Anfrage hier einfügen"></textarea>
-    <button id="weiterButton">Weiter</button>
-</div>
-`;
+// Erstelle das Eingabefenster
+function createInputWindow() {
+    const inputWindow = document.createElement('div');
+    inputWindow.style.position = 'fixed';
+    inputWindow.style.top = '0';
+    inputWindow.style.left = '0';
+    inputWindow.style.width = '100%';
+    inputWindow.style.height = '100%';
+    inputWindow.style.backgroundColor = 'rgba(0,0,0,0.7)';
+    inputWindow.style.zIndex = '9999';
 
-// Funktion zum Erstellen des Popups
-function createPopup() {
-    const body = document.querySelector('body');
-    const div = document.createElement('div');
-    div.innerHTML = popupHTML;
-    body.appendChild(div);
+    const inputBox = document.createElement('textarea');
+    inputBox.style.width = '80%';
+    inputBox.style.height = '50%';
+    inputBox.style.margin = '20% auto';
+    inputBox.style.display = 'block';
+    inputBox.placeholder = 'Kopiere deine Standdeff Anfrage hier rein...';
 
-    document.getElementById('weiterButton').addEventListener('click', processInput);
+    const nextButton = document.createElement('button');
+    nextButton.innerText = 'Weiter';
+    nextButton.onclick = () => parseInput(inputBox.value);
+
+    inputWindow.appendChild(inputBox);
+    inputWindow.appendChild(nextButton);
+
+    document.body.appendChild(inputWindow);
 }
 
-// Funktion zur Verarbeitung der Eingabe
-function processInput() {
-    const input = document.getElementById('deffInput').value;
-    const lines = input.split('\n');
+// Parse die Eingabe und erstelle die Zusammenfassung
+function parseInput(inputText) {
+    const lines = inputText.split('\n');
+    const summaryWindow = document.createElement('div');
+    summaryWindow.style.position = 'fixed';
+    summaryWindow.style.top = '0';
+    summaryWindow.style.left = '0';
+    summaryWindow.style.width = '100%';
+    summaryWindow.style.height = '100%';
+    summaryWindow.style.backgroundColor = 'rgba(0,0,0,0.7)';
+    summaryWindow.style.zIndex = '9999';
 
-    const villages = lines.map(line => {
-        const parts = line.split(' ');
-        const coords = parts[1].split('(')[1].split(')')[0].split('|');
-        const x = coords[0];
-        const y = coords[1];
-        const deffNeeded = parseInt(parts[2]);
-        const deffRemaining = parseInt(parts[3]);
-        
-        return {
-            coords: { x, y },
-            deffNeeded,
-            deffRemaining
-        };
-    });
+    const summaryContent = document.createElement('div');
+    summaryContent.style.width = '80%';
+    summaryContent.style.height = '50%';
+    summaryContent.style.margin = '20% auto';
+    summaryContent.style.display = 'block';
 
-    showSummary(villages);
-}
+    lines.forEach((line, index) => {
+        const parts = line.split(/\s+/);
+        if (parts.length >= 5) {
+            const coords = parts[1].match(/\((\d+)\|(\d+)\)/);
+            if (coords) {
+                const x = coords[1];
+                const y = coords[2];
+                const needed = parts[3];
+                const remaining = parts[4];
 
-// Funktion zur Anzeige der Zusammenfassung
-function showSummary(villages) {
-    const summaryHTML = `
-    <div id="summary">
-        ${villages.map((village, index) => `
-        <div>
-            <input type="checkbox" id="check${index}" />
-            <label for="check${index}">${village.coords.x}|${village.coords.y} - Noch benötigt: ${village.deffNeeded - village.deffRemaining}</label>
-            <input type="number" id="amount${index}" placeholder="Anzahl Pakete" />
-        </div>
-        `).join('')}
-        <button id="continueButton">Weiter</button>
-    </div>
-    `;
-
-    const popup = document.getElementById('deffPopup');
-    popup.innerHTML = summaryHTML;
-
-    document.getElementById('continueButton').addEventListener('click', sendTroops);
-}
-
-// Funktion zum Senden der Truppen
-function sendTroops() {
-    const selectedVillages = [];
-    const amountInputs = document.querySelectorAll('[id^="amount"]');
-    
-    amountInputs.forEach((input, index) => {
-        const amount = parseInt(input.value);
-        if (amount > 0) {
-            const coords = villages[index].coords;
-            selectedVillages.push({ coords, amount });
+                const row = document.createElement('div');
+                row.innerHTML = `
+                    <input type="checkbox" id="check${index}" value="${x}|${y}">
+                    <label for="check${index}">${x}|${y}</label>
+                    <input type="number" id="amount${index}" placeholder="Pakete">
+                `;
+                summaryContent.appendChild(row);
+            }
         }
     });
 
-    if (selectedVillages.length > 0) {
-        openTroopsPage(selectedVillages);
-    }
+    const nextButton = document.createElement('button');
+    nextButton.innerText = 'Weiter';
+    nextButton.onclick = () => openMassSupport(summaryContent);
+
+    summaryWindow.appendChild(summaryContent);
+    summaryWindow.appendChild(nextButton);
+
+    document.body.appendChild(summaryWindow);
 }
 
-// Funktion zum Öffnen der Truppenseite
-function openTroopsPage(villages) {
-    const url = 'https://de224.die-staemme.de/game.php?&screen=place';
-    window.open(url, '_blank');
-
-    // Hier müsstest du den Code einfügen, der die Truppen sendet.
-    // Zum Beispiel: Koordinaten einfügen, SD1 auswählen, Abschicken klicken.
+// Öffne den Massenunterstützungsbildschirm
+function openMassSupport(summaryContent) {
+    // Dein Code zum Öffnen des Versammlungsplatzes und weiteren Schritten
+    // Zum Beispiel:
+    const selectedCoords = Array.from(summaryContent.querySelectorAll('input[type="checkbox"]:checked'))
+        .map(checkbox => checkbox.value);
+    console.log('Ausgewählte Koordinaten:', selectedCoords);
+    
+    // Hier müsstest du den Versammlungsplatz öffnen, die Koordinaten einfügen usw.
+    // Da es sich um eine spezifische Webseite handelt, müsstest du den entsprechenden Code hinzufügen.
 }
 
-// Aufruf der Funktion zum Erstellen des Popups
-createPopup();
+// Füge den Button hinzu, um das Eingabefenster zu starten
+const startButton = document.createElement('button');
+startButton.innerText = 'Starte Standdeff Skript';
+startButton.onclick = () => createInputWindow();
+
+document.body.appendChild(startButton);
